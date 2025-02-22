@@ -27,11 +27,18 @@ export class Player {
     }
 
     shootBullet() {
-        // Create a bullet at the player's current position
-        let bullet = this.add.sprite(this.player.x, this.player.y, 'bullet'); // or your custom bullet shape
+        if (!this.input.activePointer) return;
+        
+        // Create a triangle bullet that resembles the player's shape
+        let bullet = this.add.triangle(this.player.x, this.player.y, 0, 0, -15, 30, 15, 30, 0x00ffff); // Yellow bullet
         this.physics.add.existing(bullet);
-        bullet.body.setVelocity(0, -500); // Adjust velocity as needed
         this.bullets.add(bullet);
+        
+        let pointer = this.input.activePointer;
+        let angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, pointer.x, pointer.y);
+        let speed = 400;
+        
+        bullet.body.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
     }
 
     updateHPText() {
