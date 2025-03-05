@@ -9,11 +9,7 @@ node_modules/
 Thumbs.db
 
 # Environment files
-<<<<<<< HEAD
-.env
-=======
 .env
 
 # .gitignore
 dist/
->>>>>>> test

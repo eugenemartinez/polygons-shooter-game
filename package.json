@@ -1,9 +1,4 @@
 {
-<<<<<<< HEAD
-  "dependencies": {
-    "phaser": "^3.88.2"
-  }
-=======
   "name": "polygons-shooter-game",
   "version": "1.0.0",
   "description": "A geometric survival shooter game built with Phaser 3.",
@@ -23,5 +18,4 @@
   },
   "author": "Your Name",
   "license": "MIT"
->>>>>>> test
 }
