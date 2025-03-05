@@ -1,11 +1,18 @@
+<<<<<<< HEAD
+=======
+import Phaser from 'phaser';
+>>>>>>> test
 import GameCanvas from './js/ui/canvas.js';
 import GameScene from './js/scenes/game-scene.js';
 import TitleScene from './js/scenes/title-scene.js';
 import GameOverScene from './js/scenes/game-over-scene.js';
+<<<<<<< HEAD
 // Import other modules as needed
 // import BootScene from './js/scenes/BootScene.js';
 // import MenuScene from './js/scenes/MenuScene.js';
 // etc.
+=======
+>>>>>>> test
 
 // Initialize the canvas and game
 const gameCanvas = new GameCanvas();
@@ -35,9 +42,12 @@ gameCanvas.setupResizeListener();
 game.scene.add('TitleScene', TitleScene);
 game.scene.add('GameScene', GameScene);
 game.scene.add('GameOverScene', GameOverScene);
+<<<<<<< HEAD
 // Add other scenes as needed
 // game.scene.add('Boot', BootScene);
 // game.scene.add('Menu', MenuScene);
+=======
+>>>>>>> test
 
 // Start with the title scene instead of the game scene
 game.scene.start('TitleScene');
