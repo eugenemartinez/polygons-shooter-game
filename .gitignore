@@ -10,3 +10,6 @@ Thumbs.db
 
 # Environment files
 .env
+
+# .gitignore
+dist/

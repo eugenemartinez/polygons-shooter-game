@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import GameCanvas from './js/ui/canvas.js';
 import GameScene from './js/scenes/game-scene.js';
 import TitleScene from './js/scenes/title-scene.js';
