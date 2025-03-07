@@ -113,7 +113,8 @@ export default class GameScene extends Phaser.Scene {
         // Debug keys
         this.debugKeys = {
             i: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.I),
-            q: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q) // Add Q key for setting HP to 0
+            o: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.O), // Debug text toggle
+            u: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.U)  // Defeat player (changed from Q)
         };
 
         // Add this after all your other initialization code
@@ -130,7 +131,7 @@ export default class GameScene extends Phaser.Scene {
         this.debugText.setDepth(1000);     // Make sure it's on top of everything
         
         // Add a toggle key for debug display
-        this.debugKeys.d = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+        this.debugKeys.o = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.O);
         
         // Initially hide debug text (optional)
         this.debugText.visible = false;
@@ -149,10 +150,13 @@ export default class GameScene extends Phaser.Scene {
         this.debugText.setDepth(1000);     // Make sure it's on top of everything
         
         // Add a toggle key for debug display
-        this.debugKeys.d = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+        this.debugKeys.o = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.O);
         
         // Initially hide debug text (optional)
         this.debugText.visible = false;
+
+        // Add P key for pause
+        this.pauseKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
     }
     
     startGame() {
@@ -217,7 +221,8 @@ export default class GameScene extends Phaser.Scene {
             }
         }
         
-        if (Phaser.Input.Keyboard.JustDown(this.debugKeys.q)) {
+        // Change from Q to U for player defeat
+        if (Phaser.Input.Keyboard.JustDown(this.debugKeys.u)) {
             if (this.player) {
                 this.player.health = 0;
                 this.player.defeat();
@@ -225,7 +230,7 @@ export default class GameScene extends Phaser.Scene {
         }
 
         // Add this with your other debug key checks
-        if (Phaser.Input.Keyboard.JustDown(this.debugKeys.d)) {
+        if (Phaser.Input.Keyboard.JustDown(this.debugKeys.o)) {
             this.debugText.visible = !this.debugText.visible;
         }
         
@@ -275,6 +280,11 @@ export default class GameScene extends Phaser.Scene {
         // Update power-ups
         if (this.powerUpManager) {
             this.powerUpManager.update();
+        }
+
+        // Check for pause key press
+        if (Phaser.Input.Keyboard.JustDown(this.pauseKey)) {
+            this.pauseGame();
         }
     }
     
@@ -494,5 +504,13 @@ export default class GameScene extends Phaser.Scene {
             ease: 'Power2',
             onComplete: () => text.destroy()
         });
+    }
+
+    pauseGame() {
+        // Pause the current scene
+        this.scene.pause();
+        
+        // Launch the pause scene
+        this.scene.launch('PauseScene');
     }
 }
