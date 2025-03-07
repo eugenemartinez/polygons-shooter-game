@@ -5,7 +5,7 @@ import BossFour from '../entities/boss/boss-four.js';
 import BossFive from '../entities/boss/boss-five.js';
 
 /**
- * BossManager handles boss spawning, progression, and special attacks
+ * BossManager handles boss spawning and progression
  */
 export default class BossManager {
     constructor(scene, player, enemyManager) {
@@ -32,9 +32,6 @@ export default class BossManager {
         // Mapping from shape to boss class (shape -> [HP, BossClass])
         this.shapeToBossMap = new Map();
         this.initializeShapeToBossMap();
-        
-        // Set up event listeners for boss special attacks
-        this.setupEventListeners();
     }
     
     initializeShapeToBossMap() {
@@ -60,12 +57,6 @@ export default class BossManager {
         }
     }
     
-    setupEventListeners() {
-        // Listen for boss special attack events
-        this.scene.events.on('bossFireBullet', this.handleBossFireBullet, this);
-        this.scene.events.on('bossSummonMinions', this.handleBossSummonMinions, this);
-    }
-    
     update(time, delta) {
         // Check boss progression using Phaser time for consistent progression
         this.checkBossProgression(time);
@@ -73,28 +64,23 @@ export default class BossManager {
         // Get elapsed time in seconds from game stats (resets on game restart)
         const gameTime = this.scene.gameStats.elapsedTime;
         
-        // Convert seconds to milliseconds for consistency with other times
-        const gameTimeMs = gameTime * 1000;
-        
-        // Boss spawn every 30 seconds of game time (not real time)
+        // Boss spawn every 5 seconds of game time (for testing)
         const bossSpawnIntervalSeconds = 30;
         
-        // Check if we need to spawn a boss (every 30 seconds of game time)
-        // We use integer division to check for multiples of 30
-        if (gameTime >= bossSpawnIntervalSeconds && gameTime % bossSpawnIntervalSeconds < 1) {
-            // Only spawn if we haven't already spawned at this interval
-            const currentInterval = Math.floor(gameTime / bossSpawnIntervalSeconds);
+        // Check if we need to spawn a boss
+        const currentInterval = Math.floor(gameTime / bossSpawnIntervalSeconds);
+        
+        if (gameTime >= bossSpawnIntervalSeconds && currentInterval > this.lastSpawnedInterval) {
+            console.log(`Spawning boss at game time ${gameTime}s, interval ${currentInterval}`);
             
-            if (currentInterval > this.lastSpawnedInterval) {
-                // Spawn the boss
-                this.spawnBoss(time);
-                
-                // Increment boss level for next spawn (up to 5)
-                this.currentBossLevel = Math.min(5, this.currentBossLevel + 1);
-                
-                // Track that we've spawned a boss in this interval
-                this.lastSpawnedInterval = currentInterval;
-            }
+            // Spawn the boss
+            this.spawnBoss(time);
+            
+            // Increment boss level for next spawn (up to 5)
+            this.currentBossLevel = Math.min(5, this.currentBossLevel + 1);
+            
+            // Track that we've spawned a boss in this interval
+            this.lastSpawnedInterval = currentInterval;
         }
         
         // Update all active bosses
@@ -107,11 +93,6 @@ export default class BossManager {
             }
             
             boss.update(time, delta, this.player.x, this.player.y);
-        }
-        
-        // Update boss bullets if any
-        if (this.bossBullets) {
-            this.updateBossBullets();
         }
     }
     
@@ -196,68 +177,6 @@ export default class BossManager {
         return { x, y };
     }
     
-    handleBossFireBullet(x, y, angle, speed) {
-        // Initialize bullets group if it doesn't exist
-        if (!this.bossBullets) {
-            this.bossBullets = this.scene.physics.add.group();
-            
-            // Set up collision with player
-            this.scene.physics.add.collider(
-                this.player.sprite,
-                this.bossBullets,
-                this.handlePlayerBulletCollision,
-                null,
-                this
-            );
-        }
-        
-        // Create a bullet graphic
-        const bullet = this.scene.add.graphics();
-        bullet.fillStyle(0xFF0000, 1);
-        bullet.fillCircle(0, 0, 5);
-        bullet.x = x;
-        bullet.y = y;
-        
-        // Enable physics on the bullet
-        this.scene.physics.world.enable(bullet);
-        
-        // Set the velocity based on angle and speed
-        bullet.body.velocity.x = Math.cos(angle) * speed;
-        bullet.body.velocity.y = Math.sin(angle) * speed;
-        
-        // Add to bullets group
-        this.bossBullets.add(bullet);
-        
-        // Set a lifespan for the bullet
-        bullet.lifespan = 3000; // 3 seconds
-        bullet.creationTime = this.scene.time.now;
-        
-        // Set bullet damage based on the current top unlocked boss level
-        // Ensure unlockedBossLevels exists before accessing its length property
-        const bossLevel = this.unlockedBossLevels && this.unlockedBossLevels.length > 0 ? 
-                          this.unlockedBossLevels[this.unlockedBossLevels.length - 1] : 1;
-        bullet.damage = bossLevel;
-        
-        return bullet;
-    }
-    
-    updateBossBullets() {
-        // Remove bullets that have exceeded their lifespan
-        this.bossBullets.getChildren().forEach(bullet => {
-            if (this.scene.time.now - bullet.creationTime > bullet.lifespan) {
-                bullet.destroy();
-            }
-        });
-    }
-    
-    handleBossSummonMinions(positions, sides) {
-        // Create smaller enemies at the specified positions
-        positions.forEach(pos => {
-            // Use enemy manager to create the minions
-            this.enemyManager.createMinion(pos.x, pos.y, sides);
-        });
-    }
-    
     handlePlayerBulletCollision(playerSprite, bullet) {
         // Deal damage to the player
         const player = playerSprite.parentPlayer;
@@ -297,7 +216,6 @@ export default class BossManager {
         }
     }
 
-    // Add this method to the class
     startSpawning() {
         // Reset the interval tracking
         this.lastSpawnedInterval = 0;
@@ -307,17 +225,74 @@ export default class BossManager {
         this.currentBossLevel = 0;
     }
 
-    // Add this method to the class
     shutdown() {
-        // Clear all bosses from the game
-        this.bossGroup.clear(true, true);
+        console.log("Shutting down boss manager...");
         
-        // Reset boss tracking
-        this.bossesDefeated = 0;
-        this.currentBossLevel = 0;
-        this.lastSpawnedInterval = 0;
-        
-        // Reset the boss progression
-        this.unlockedBossLevels = [1];
+        try {
+            // First, remove all colliders to prevent errors on restart
+            this.removeAllColliders();
+            
+            // Clear all bosses
+            this.bosses = [];
+            if (this.bossGroup) {
+                this.bossGroup.clear(true, true);
+            }
+            
+            // Clear all boss bullets with extra care
+            if (this.bossBullets) {
+                // Destroy each bullet individually first
+                const bullets = this.bossBullets.getChildren();
+                if (bullets && bullets.length > 0) {
+                    for (const bullet of bullets) {
+                        if (bullet && bullet.active) {
+                            bullet.destroy();
+                        }
+                    }
+                }
+                // Then clear the group
+                this.bossBullets.clear(true, true);
+                // Null the reference to force recreation later
+                this.bossBullets = null;
+            }
+            
+            // Remove event listeners
+            if (this.scene && this.scene.events) {
+                this.scene.events.off('bossFireBullet', this.handleBossFireBullet, this);
+            }
+            
+            // Reset boss tracking
+            this.bossesDefeated = 0;
+            this.currentBossLevel = 0;
+            this.lastSpawnedInterval = 0;
+            this.unlockedBossLevels = [1];
+            
+        } catch (error) {
+            console.error("Error shutting down boss manager:", error);
+        }
+    }
+    
+    removeAllColliders() {
+        try {
+            if (!this.scene || !this.scene.physics || !this.scene.physics.world) {
+                return;
+            }
+            
+            // Get all active colliders
+            const colliders = this.scene.physics.world.colliders.getActive();
+            
+            // Remove any colliders involving our groups
+            for (const collider of colliders) {
+                const obj1 = collider.object1;
+                const obj2 = collider.object2;
+                
+                // Check if either object is one of our groups
+                if (obj1 === this.bossBullets || obj2 === this.bossBullets || 
+                    obj1 === this.bossGroup || obj2 === this.bossGroup) {
+                    collider.destroy();
+                }
+            }
+        } catch (error) {
+            console.error("Error removing colliders:", error);
+        }
     }
 }

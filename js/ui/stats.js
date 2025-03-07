@@ -8,7 +8,7 @@ export default class GameStats {
         this.hp = initialHP;
         this.maxHp = initialHP;
         this.score = initialScore;
-        this.startTime = Date.now();
+        this.startTime = 0;
         this.elapsedTime = 0;
         
         // Style configuration for stats text
@@ -30,6 +30,13 @@ export default class GameStats {
         
         // Create UI elements
         this.createUI();
+        
+        // Start the timer update
+        this.startTimer();
+    }
+    
+    startTimer() {
+        this.startTime = this.scene.time.now;
         
         // Start the timer update
         this.timerEvent = this.scene.time.addEvent({
@@ -118,7 +125,7 @@ export default class GameStats {
     }
     
     updateTimer() {
-        this.elapsedTime = Math.floor((Date.now() - this.startTime) / 1000);
+        this.elapsedTime = Math.floor((this.scene.time.now - this.startTime) / 1000);
         const minutes = Math.floor(this.elapsedTime / 60);
         const seconds = this.elapsedTime % 60;
         
@@ -139,7 +146,7 @@ export default class GameStats {
         this.hp = initialHP;
         this.maxHp = initialHP;
         this.score = initialScore;
-        this.startTime = Date.now();
+        this.startTime = this.scene.time.now;
         this.elapsedTime = 0;
         
         this.updateHP(this.hp);

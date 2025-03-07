@@ -1,20 +1,20 @@
 export default class VirtualJoystick {
-    constructor(scene, x, y, size) {
+    constructor(scene, size) {
         this.scene = scene;
         this.size = size || 100;
         
         // Create base and stick graphics
-        this.base = this.scene.add.circle(x, y, this.size / 2, 0x000000, 0.5).setScrollFactor(0).setDepth(100);
-        this.stick = this.scene.add.circle(x, y, this.size / 4, 0xcccccc, 0.8).setScrollFactor(0).setDepth(101);
+        this.base = this.scene.add.circle(0, 0, this.size / 2, 0x000000, 0.5).setScrollFactor(0).setDepth(100).setVisible(false);
+        this.stick = this.scene.add.circle(0, 0, this.size / 4, 0xcccccc, 0.8).setScrollFactor(0).setDepth(101).setVisible(false);
         
         // Border for better visibility
-        this.border = this.scene.add.circle(x, y, this.size / 2, 0xffffff).setScrollFactor(0).setDepth(99);
+        this.border = this.scene.add.circle(0, 0, this.size / 2, 0xffffff).setScrollFactor(0).setDepth(99).setVisible(false);
         this.border.setStrokeStyle(2, 0xffffff, 0.8);
         this.border.setFillStyle(0x000000, 0.1);
         
         // Initialize position and movement values
-        this.baseX = x;
-        this.baseY = y;
+        this.baseX = 0;
+        this.baseY = 0;
         this.deltaX = 0;
         this.deltaY = 0;
         
@@ -24,6 +24,11 @@ export default class VirtualJoystick {
         // Make visible only on touch devices
         const isTabletOrMobile = this.scene.scale.width < 1024;
         this.setVisible(isTabletOrMobile);
+        
+        // Allow joystick to appear on touch within the bottom half of the screen
+        if (isTabletOrMobile) {
+            this.setupTouchEvents();
+        }
     }
     
     setupInteraction() {
@@ -59,6 +64,36 @@ export default class VirtualJoystick {
         // Reset on pointer up
         this.scene.input.on('pointerup', () => {
             this.resetStick();
+            this.setVisible(false);
+        });
+    }
+    
+    setupTouchEvents() {
+        this.scene.input.on('pointerdown', (pointer) => {
+            const screenHeight = this.scene.scale.height;
+            const bottomHalfY = screenHeight / 2;
+            
+            if (pointer.y >= bottomHalfY) {
+                this.baseX = pointer.x;
+                this.baseY = pointer.y;
+                
+                this.base.setPosition(this.baseX, this.baseY).setVisible(true);
+                this.stick.setPosition(this.baseX, this.baseY).setVisible(true);
+                this.border.setPosition(this.baseX, this.baseY).setVisible(true);
+                
+                // Make the stick immediately usable
+                this.stick.setInteractive();
+                this.scene.input.setDraggable(this.stick);
+                this.scene.input.dragDistanceThreshold = 0; // Ensure immediate drag
+                
+                // Simulate drag start to make it usable immediately
+                this.scene.input.emit('dragstart', pointer, this.stick);
+            }
+        });
+        
+        this.scene.input.on('pointerup', () => {
+            this.resetStick();
+            this.setVisible(false);
         });
     }
     

@@ -148,31 +148,6 @@ export default class EnemyManager {
         this.enemySpawnCount++;
     }
     
-    // New method for boss-summoned minions
-    createMinion(x, y, sides) {
-        // Get the appropriate enemy class based on sides
-        let EnemyClass = EnemyOne; // Default to EnemyOne
-        let hp = 1;
-        
-        // Find the matching enemy class from our map
-        for (const [shape, [health, Class]] of this.shapeToEnemyMap.entries()) {
-            if (shape === sides) {
-                EnemyClass = Class;
-                hp = health;
-                break;
-            }
-        }
-        
-        // Create the enemy
-        const enemy = new EnemyClass(this.scene, x, y, sides);
-        
-        // Add to enemies list and physics group
-        this.enemies.push(enemy);
-        this.enemyGroup.add(enemy.sprite);
-        
-        return enemy;
-    }
-    
     getWeightedRandomShape() {
         // Assign weights to each shape based on its HP
         // Lower HP = higher weight = more likely to spawn
