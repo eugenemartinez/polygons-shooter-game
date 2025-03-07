@@ -3,6 +3,7 @@ import GameCanvas from './js/ui/canvas.js';
 import GameScene from './js/scenes/game-scene.js';
 import TitleScene from './js/scenes/title-scene.js';
 import GameOverScene from './js/scenes/game-over-scene.js';
+import PauseScene from './js/scenes/pause-scene.js'; // Add import for PauseScene
 
 // Initialize the canvas and game
 const gameCanvas = new GameCanvas();
@@ -32,6 +33,7 @@ gameCanvas.setupResizeListener();
 game.scene.add('TitleScene', TitleScene);
 game.scene.add('GameScene', GameScene);
 game.scene.add('GameOverScene', GameOverScene);
+game.scene.add('PauseScene', PauseScene); // Add the PauseScene
 
 // Start with the title scene instead of the game scene
 game.scene.start('TitleScene');
