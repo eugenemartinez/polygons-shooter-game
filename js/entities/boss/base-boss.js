@@ -35,10 +35,6 @@ export default class BaseBoss {
         
         // Store reference to this boss in the sprite for collision handling
         this.sprite.parentBoss = this;
-        
-        // Add a timer for special attacks
-        this.lastSpecialAttack = 0;
-        this.specialAttackCooldown = 5000; // 5 seconds between special attacks
     }
     
     getColorForSides(sides) {
@@ -103,16 +99,6 @@ export default class BaseBoss {
         // Update internal position
         this.x = this.sprite.x;
         this.y = this.sprite.y;
-        
-        // Check if it's time for a special attack
-        if (time - this.lastSpecialAttack > this.specialAttackCooldown) {
-            this.performSpecialAttack(time, playerX, playerY);
-            this.lastSpecialAttack = time;
-        }
-    }
-    
-    performSpecialAttack(time, playerX, playerY) {
-        // Base implementation - to be overridden by subclasses
     }
     
     takeDamage(amount) {

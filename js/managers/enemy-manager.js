@@ -45,6 +45,8 @@ export default class EnemyManager {
         
         // Counter to track the number of enemies spawned
         this.enemySpawnCount = 0;
+
+        this.spawnTimer = null; // Initialize spawnTimer to null
     }
     
     initializeShapeToEnemyMap() {
@@ -146,31 +148,6 @@ export default class EnemyManager {
         this.enemyGroup.add(enemy.sprite);
         this.lastSpawn = time;
         this.enemySpawnCount++;
-    }
-    
-    // New method for boss-summoned minions
-    createMinion(x, y, sides) {
-        // Get the appropriate enemy class based on sides
-        let EnemyClass = EnemyOne; // Default to EnemyOne
-        let hp = 1;
-        
-        // Find the matching enemy class from our map
-        for (const [shape, [health, Class]] of this.shapeToEnemyMap.entries()) {
-            if (shape === sides) {
-                EnemyClass = Class;
-                hp = health;
-                break;
-            }
-        }
-        
-        // Create the enemy
-        const enemy = new EnemyClass(this.scene, x, y, sides);
-        
-        // Add to enemies list and physics group
-        this.enemies.push(enemy);
-        this.enemyGroup.add(enemy.sprite);
-        
-        return enemy;
     }
     
     getWeightedRandomShape() {
@@ -280,8 +257,12 @@ export default class EnemyManager {
 
     // Method for proper cleanup
     shutdown() {
+        console.log("Shutting down enemy manager...");
+        
         // Clear all enemies from the game
-        this.enemyGroup.clear(true, true);
+        if (this.enemyGroup) {
+            this.enemyGroup.clear(true, true);
+        }
         this.enemies = [];
         
         // Reset tracking variables
@@ -290,5 +271,15 @@ export default class EnemyManager {
         // Reset progression
         this.unlockedShapes = [this.availableShapes[0]];
         this.lastShapeProgressionInterval = 0;
+        
+        // Remove any active timers or events related to enemy spawning
+        if (this.spawnTimer) {
+            this.spawnTimer.remove();
+        }
+        
+        // Remove any event listeners if applicable
+        if (this.scene && this.scene.events) {
+            this.scene.events.off('enemySpawn', this.spawnEnemy, this);
+        }
     }
 }

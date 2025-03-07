@@ -115,15 +115,12 @@ export default class Player {
         this.handleShooting(time);
     }
     
-    // Add this new method to constrain the player within the game bounds
     constrainPlayerToWorld() {
         const width = this.scene.cameras.main.width;
         const height = this.scene.cameras.main.height;
         
-        // Create a safe margin using the player's size
         const margin = this.size;
         
-        // Constrain X position
         if (this.sprite.x < margin) {
             this.sprite.x = margin;
             this.sprite.body.velocity.x = 0;
@@ -132,7 +129,6 @@ export default class Player {
             this.sprite.body.velocity.x = 0;
         }
         
-        // Constrain Y position
         if (this.sprite.y < margin) {
             this.sprite.y = margin;
             this.sprite.body.velocity.y = 0;
@@ -144,32 +140,23 @@ export default class Player {
     
     handleShooting(time) {
         if (time > this.lastFired + this.fireRate) {
-            // Check if we're on a tablet or smaller screen (adjusted threshold)
-            const isTabletOrMobile = this.scene.scale.width < 1024; // Updated threshold
+            const isTabletOrMobile = this.scene.scale.width < 1024;
             
             if (isTabletOrMobile) {
                 this.shootWithAutoAim();
             } else {
-                this.shoot(); // Regular shooting for larger screens
+                this.shoot();
             }
             this.lastFired = time;
         }
     }
 
     shootWithAutoAim() {
-        // Find the nearest enemy to target
         const target = this.findNearestTarget();
         
         if (target) {
-            // Calculate angle to target
-            const angle = Phaser.Math.Angle.Between(
-                this.x, 
-                this.y, 
-                target.x, 
-                target.y
-            );
+            const angle = Phaser.Math.Angle.Between(this.x, this.y, target.x, target.y);
             
-            // Create and fire the bullet
             const bullet = this.createBullet();
             if (bullet) {
                 const velocityX = Math.cos(angle) * this.bulletSpeed;
@@ -179,8 +166,7 @@ export default class Player {
                 bullet.rotation = angle + Math.PI/2;
             }
         } else {
-            // If no targets, shoot forward or in the last known direction
-            this.shootInDirection(0); // Default direction (right)
+            this.shootInDirection(0);
         }
     }
 
@@ -188,13 +174,10 @@ export default class Player {
         let nearestDistance = Infinity;
         let nearestTarget = null;
         
-        // Check enemies first
         if (this.scene.enemyManager && this.scene.enemyManager.enemies) {
             for (const enemy of this.scene.enemyManager.enemies) {
                 if (enemy.sprite && enemy.sprite.active) {
-                    const distance = Phaser.Math.Distance.Between(
-                        this.x, this.y, enemy.x, enemy.y
-                    );
+                    const distance = Phaser.Math.Distance.Between(this.x, this.y, enemy.x, enemy.y);
                     
                     if (distance < nearestDistance) {
                         nearestDistance = distance;
@@ -204,13 +187,10 @@ export default class Player {
             }
         }
         
-        // Then check bosses
         if (this.scene.bossManager && this.scene.bossManager.bosses) {
             for (const boss of this.scene.bossManager.bosses) {
                 if (boss.sprite && boss.sprite.active) {
-                    const distance = Phaser.Math.Distance.Between(
-                        this.x, this.y, boss.x, boss.y
-                    );
+                    const distance = Phaser.Math.Distance.Between(this.x, this.y, boss.x, boss.y);
                     
                     if (distance < nearestDistance) {
                         nearestDistance = distance;
@@ -237,12 +217,7 @@ export default class Player {
     shoot() {
         const pointer = this.scene.input.activePointer;
         
-        const angle = Phaser.Math.Angle.Between(
-            this.x, 
-            this.y, 
-            pointer.worldX, 
-            pointer.worldY
-        );
+        const angle = Phaser.Math.Angle.Between(this.x, this.y, pointer.worldX, pointer.worldY);
         
         const bullet = this.createBullet();
         if (bullet) {
@@ -250,7 +225,6 @@ export default class Player {
             const velocityY = Math.sin(angle) * this.bulletSpeed;
             
             bullet.body.setVelocity(velocityX, velocityY);
-            
             bullet.rotation = angle + Math.PI/2;
         }
     }
@@ -286,11 +260,8 @@ export default class Player {
         return container;
     }
     
-    // Fix the takeDamage method to properly respect invincibility
     takeDamage(amount) {
-        // Strict check for invincibility - if true, no damage
         if (this.isInvincible === true) {
-            // Visual feedback that damage was blocked
             this.scene.tweens.add({
                 targets: this.sprite,
                 alpha: { from: 1, to: 0.3 },
@@ -340,7 +311,6 @@ export default class Player {
             quantity: 20
         });
         
-        // Call handleGameOver method from the scene
         this.scene.handleGameOver();
     }
     
@@ -361,19 +331,14 @@ export default class Player {
         return false;
     }
     
-    // Simplified setInvincible method
     setInvincible(value) {
-        // Set the flag directly - simpler and less error prone
         this.isInvincible = Boolean(value);
         
-        // Apply visual effects based on state
         if (this.isInvincible) {
-            // Stop any existing pulse first
             if (this.invinciblePulse) {
                 this.invinciblePulse.stop();
             }
             
-            // Much more visible effect
             this.invinciblePulse = this.scene.tweens.add({
                 targets: this.sprite,
                 alpha: { from: 1, to: 0.3 },
@@ -382,20 +347,16 @@ export default class Player {
                 repeat: -1
             });
             
-            // Bright yellow outline
             this.sprite.lineStyle(4, 0xffff00, 1);
         } else {
-            // Clear the pulsing effect
             if (this.invinciblePulse) {
                 this.invinciblePulse.stop();
                 this.sprite.alpha = 1;
             }
             
-            // Restore original line style
             this.sprite.lineStyle(2, 0xffffff, 1);
         }
         
-        // Re-render with updated style
         const points = this.generatePolygonPoints(0, 0, this.size, this.sides);
         this.sprite.clear();
         this.sprite.fillStyle(this.color, 1);
@@ -403,7 +364,6 @@ export default class Player {
         this.sprite.strokePoints(points, true);
     }
     
-    // Helper methods for gameplay
     enableInvincibility() {
         this.setInvincible(true);
     }
@@ -412,45 +372,35 @@ export default class Player {
         this.setInvincible(false);
     }
     
-    // Method to enable temporary invincibility
     temporaryInvincibility(duration) {
         this.setInvincible(true);
         
-        // Set a timer to disable invincibility after duration
         this.scene.time.delayedCall(duration, () => {
             this.setInvincible(false);
         });
     }
 
-    // Add this method to handle joystick input
     handleJoystickMovement(movement) {
-        // Store joystick movement for use in the update method
         this.joystickInput = movement;
     }
 
-    // Update the handleMovement method to use joystick input when available
     handleMovement() {
-        // Get input from keyboard or joystick
         let dx = 0;
         let dy = 0;
         
-        // Check if we have joystick input
         if (this.joystickInput) {
             dx = this.joystickInput.x;
             dy = this.joystickInput.y;
         } else {
-            // Use keyboard input
             const cursors = this.scene.cursors;
             const wasd = this.scene.wasd;
             
-            // Handle left/right
             if (cursors.left.isDown || wasd.left.isDown) {
                 dx = -1;
             } else if (cursors.right.isDown || wasd.right.isDown) {
                 dx = 1;
             }
             
-            // Handle up/down
             if (cursors.up.isDown || wasd.up.isDown) {
                 dy = -1;
             } else if (cursors.down.isDown || wasd.down.isDown) {
@@ -458,14 +408,45 @@ export default class Player {
             }
         }
         
-        // Normalize diagonal movement
         if (dx !== 0 && dy !== 0) {
             const length = Math.sqrt(dx * dx + dy * dy);
             dx /= length;
             dy /= length;
         }
         
-        // Apply movement
         this.sprite.body.setVelocity(dx * this.speed, dy * this.speed);
+    }
+
+    // Methods to apply and remove power-up effects
+    applyDoubleDamage() {
+        this.bulletDamage *= 2;
+    }
+
+    removeDoubleDamage() {
+        this.bulletDamage /= 2;
+    }
+
+    applyRapidFire() {
+        this.fireRate /= 2;
+    }
+
+    removeRapidFire() {
+        this.fireRate *= 2;
+    }
+
+    applyHaste() {
+        this.speed *= 1.5;
+    }
+
+    removeHaste() {
+        this.speed /= 1.5;
+    }
+
+    applyShield() {
+        this.isInvincible = true;
+    }
+
+    removeShield() {
+        this.isInvincible = false;
     }
 }

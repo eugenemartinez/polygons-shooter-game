@@ -101,6 +101,10 @@ export default class GameOverScene extends Phaser.Scene {
             
             this.cameras.main.once('camerafadeoutcomplete', () => {
                 // This will ensure proper shutdown and reinitialization
+                const gameScene = this.scene.get('GameScene');
+                // if (gameScene) {
+                //     gameScene.shutdown(); // Ensure shutdown is called
+                // }
                 this.scene.stop('GameScene'); // This will trigger the shutdown method
                 this.scene.start('GameScene'); // This will create a fresh scene
                 this.scene.stop('GameOverScene');

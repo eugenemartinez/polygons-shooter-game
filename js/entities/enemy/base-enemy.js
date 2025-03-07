@@ -131,21 +131,34 @@ export default class BaseEnemy {
     }
     
     die() {
-        // Create death explosion effect
-        const particles = this.scene.add.particles(this.x, this.y, 'particle', {
-            speed: { min: 20, max: 100 },
-            angle: { min: 0, max: 360 },
-            scale: { start: 0.3, end: 0 },
-            blendMode: 'ADD',
-            lifespan: 800,
-            gravityY: 0,
-            quantity: 10 + this.sides * 2 // More particles for larger shapes
-        });
+        if (!this.sprite || !this.sprite.active) return;
         
-        // Auto-destroy particles after animation completes
-        this.scene.time.delayedCall(800, () => {
-            particles.destroy();
-        });
+        // Visual explosion effect
+        for (let i = 0; i < 10; i++) { // Fewer particles than boss
+            const particle = this.scene.add.graphics();
+            particle.fillStyle(this.color, 1);
+            
+            const particleSize = Phaser.Math.Between(2, 5); // Smaller particles
+            particle.fillCircle(0, 0, particleSize);
+            
+            particle.x = this.sprite.x;
+            particle.y = this.sprite.y;
+            
+            const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+            const speed = Phaser.Math.FloatBetween(30, 100); // Slower speed
+            
+            this.scene.tweens.add({
+                targets: particle,
+                x: particle.x + Math.cos(angle) * speed,
+                y: particle.y + Math.sin(angle) * speed,
+                alpha: 0,
+                scale: 0.5,
+                duration: 800, // Shorter duration
+                onComplete: () => {
+                    particle.destroy();
+                }
+            });
+        }
         
         // Destroy the enemy
         this.sprite.destroy();
