@@ -45,6 +45,8 @@ export default class EnemyManager {
         
         // Counter to track the number of enemies spawned
         this.enemySpawnCount = 0;
+
+        this.spawnTimer = null; // Initialize spawnTimer to null
     }
     
     initializeShapeToEnemyMap() {
@@ -255,8 +257,12 @@ export default class EnemyManager {
 
     // Method for proper cleanup
     shutdown() {
+        console.log("Shutting down enemy manager...");
+        
         // Clear all enemies from the game
-        this.enemyGroup.clear(true, true);
+        if (this.enemyGroup) {
+            this.enemyGroup.clear(true, true);
+        }
         this.enemies = [];
         
         // Reset tracking variables
@@ -265,5 +271,15 @@ export default class EnemyManager {
         // Reset progression
         this.unlockedShapes = [this.availableShapes[0]];
         this.lastShapeProgressionInterval = 0;
+        
+        // Remove any active timers or events related to enemy spawning
+        if (this.spawnTimer) {
+            this.spawnTimer.remove();
+        }
+        
+        // Remove any event listeners if applicable
+        if (this.scene && this.scene.events) {
+            this.scene.events.off('enemySpawn', this.spawnEnemy, this);
+        }
     }
 }

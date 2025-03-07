@@ -73,16 +73,18 @@ export default class TitleScene extends Phaser.Scene {
                 fontFamily: 'Arial',
                 fontSize: `${smallerDimension * 0.03}px`,
                 color: '#cccccc',
-                align: 'center'
+                align: 'center',
+                lineSpacing: 30,
             }).setOrigin(0.5);
         } else {
-            // For tablets and mobile, show auto-aim message
+            // For tablets and mobile, show auto-aim message and joystick instructions
             const touchText = this.add.text(width / 2, instructionsY,
-                'Auto-aim enabled for touch devices', {
+                'Auto-aim enabled for touch devices\nUse the virtual joystick to move', {
                 fontFamily: 'Arial',
                 fontSize: `${smallerDimension * 0.03}px`,
                 color: '#cccccc',
-                align: 'center'
+                align: 'center',
+                lineSpacing: 15,
             }).setOrigin(0.5);
         }
         

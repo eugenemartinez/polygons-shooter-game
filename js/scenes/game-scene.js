@@ -3,6 +3,7 @@ import Player from '../entities/player.js';
 import EnemyManager from '../managers/enemy-manager.js';
 import BossManager from '../managers/boss-manager.js';
 import VirtualJoystick from '../ui/virtual-joystick.js';
+import PowerUpManager from '../managers/buff-manager.js';
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
@@ -49,6 +50,9 @@ export default class GameScene extends Phaser.Scene {
         
         // Initialize boss manager
         this.bossManager = new BossManager(this, this.player, this.enemyManager);
+        
+        // Initialize power-up manager (add this line)
+        this.powerUpManager = new PowerUpManager(this, this.player);
         
         // Setup collision detection
         this.setupCollisions();
@@ -106,6 +110,11 @@ export default class GameScene extends Phaser.Scene {
             this.bossManager.startSpawning();
         }
         
+        // Add this to initialize the PowerUpManager
+        if (this.powerUpManager) {
+            this.powerUpManager.create(); // Make sure it sets up the collisions
+        }
+        
         // Start game stats timer
         this.gameStats.reset();
         
@@ -122,6 +131,12 @@ export default class GameScene extends Phaser.Scene {
     }
     
     update(time, delta) {
+        // Make sure PowerUpManager.update() is called here
+        if (this.powerUpManager) {
+            this.powerUpManager.update();
+        } else {
+        }
+        
         // Check debug keys
         if (Phaser.Input.Keyboard.JustDown(this.debugKeys.i)) {
             if (this.player) {
@@ -155,6 +170,11 @@ export default class GameScene extends Phaser.Scene {
         // Update bosses
         if (this.bossManager) {
             this.bossManager.update(time, delta);
+        }
+
+        // Update power-ups
+        if (this.powerUpManager) {
+            this.powerUpManager.update();
         }
     }
     
@@ -318,6 +338,8 @@ export default class GameScene extends Phaser.Scene {
 
     // Add a shutdown method to properly clean up
     shutdown() {
+        console.log("Shutting down game scene...");
+
         // Clean up any persistent objects or timers
         if (this.enemyManager) {
             this.enemyManager.shutdown();
@@ -325,6 +347,10 @@ export default class GameScene extends Phaser.Scene {
         
         if (this.bossManager) {
             this.bossManager.shutdown();
+        }
+        
+        if (this.powerUpManager) {
+            this.powerUpManager.shutdown();
         }
         
         // Clean up any active timers

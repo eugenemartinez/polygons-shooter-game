@@ -71,7 +71,6 @@ export default class BossManager {
         const currentInterval = Math.floor(gameTime / bossSpawnIntervalSeconds);
         
         if (gameTime >= bossSpawnIntervalSeconds && currentInterval > this.lastSpawnedInterval) {
-            console.log(`Spawning boss at game time ${gameTime}s, interval ${currentInterval}`);
             
             // Spawn the boss
             this.spawnBoss(time);

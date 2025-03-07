@@ -36,9 +36,8 @@ export default class GameStats {
     }
     
     startTimer() {
-        this.startTime = this.scene.time.now;
-        
-        // Start the timer update
+        this.elapsedTime = 0;
+        this.timerText.setText("Time: 00:00");
         this.timerEvent = this.scene.time.addEvent({
             delay: 1000, // Update every second
             callback: this.updateTimer,
@@ -125,7 +124,7 @@ export default class GameStats {
     }
     
     updateTimer() {
-        this.elapsedTime = Math.floor((this.scene.time.now - this.startTime) / 1000);
+        this.elapsedTime++;
         const minutes = Math.floor(this.elapsedTime / 60);
         const seconds = this.elapsedTime % 60;
         
@@ -146,12 +145,17 @@ export default class GameStats {
         this.hp = initialHP;
         this.maxHp = initialHP;
         this.score = initialScore;
-        this.startTime = this.scene.time.now;
         this.elapsedTime = 0;
         
         this.updateHP(this.hp);
         this.updateScore(this.score);
-        this.updateTimer();
+        this.timerText.setText("Time: 00:00");
+        
+        // Restart the timer
+        if (this.timerEvent) {
+            this.timerEvent.remove();
+        }
+        this.startTimer();
     }
     
     // Get current game stats
