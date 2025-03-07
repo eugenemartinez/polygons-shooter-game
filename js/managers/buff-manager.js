@@ -12,7 +12,7 @@ export default class PowerUpManager {
         
         // Instead of using Phaser's time events, we'll track time using gameStats.elapsedTime
         this.initialSpawnTimeSeconds = 60; // 10 seconds for testing (change to 60 for production)
-        this.spawnIntervalSeconds = 20;    // Spawn every 20 seconds
+        this.spawnIntervalSeconds = 15;    // Spawn every 20 seconds
         this.lastSpawnTimeSeconds = -1;    // Track when we last spawned
         
         // Duration that power-ups stay on screen (10 seconds)
@@ -137,17 +137,53 @@ export default class PowerUpManager {
     
     // Track active power-up effects
     trackPowerUp(powerUp) {
-        this.activePowerUps.push(powerUp);
+        // Check if this buff type is already active
+        const existingBuff = this.activePowerUps.find(p => p.type === powerUp.type);
         
-        // Add indicator for active power-up
-        this.addActivePowerUpIndicator(powerUp);
-        
-        // Set timer to remove effect
-        powerUp.activeTimer = this.scene.time.delayedCall(powerUp.duration, () => {
-            powerUp.removeEffect(this.player);
-            this.removeActivePowerUpIndicator(powerUp.type);
-            this.activePowerUps = this.activePowerUps.filter(p => p !== powerUp);
-        });
+        if (existingBuff) {
+            // Same buff type already exists - extend/refresh its duration
+            
+            // Remove the existing timer to prevent it from expiring
+            if (existingBuff.activeTimer) {
+                existingBuff.activeTimer.remove();
+            }
+            
+            // Update the existing buff's reference and reset its timer
+            existingBuff.activeTimer = this.scene.time.delayedCall(powerUp.duration, () => {
+                existingBuff.removeEffect(this.player);
+                this.removeActivePowerUpIndicator(existingBuff.type);
+                this.activePowerUps = this.activePowerUps.filter(p => p !== existingBuff);
+            });
+            
+            // Reset/refresh the UI indicator timer bar
+            this.refreshActivePowerUpIndicator(existingBuff, powerUp.duration);
+            
+            // Display status message for refresh
+            const refreshMessages = {
+                'doubleDamage': 'DOUBLE DAMAGE EXTENDED!',
+                'rapidFire': 'RAPID FIRE EXTENDED!',
+                'haste': 'HASTE EXTENDED!',
+                'shield': 'SHIELD EXTENDED!'
+            };
+            
+            const message = refreshMessages[powerUp.type] || `${powerUp.type.toUpperCase()} EXTENDED!`;
+            this.scene.displayStatusMessage(message, 0x00ffff);
+            
+            // Don't add the new powerUp to activePowerUps since we're keeping the existing one
+        } else {
+            // New buff type - add normally
+            this.activePowerUps.push(powerUp);
+            
+            // Add indicator for active power-up
+            this.addActivePowerUpIndicator(powerUp);
+            
+            // Set timer to remove effect
+            powerUp.activeTimer = this.scene.time.delayedCall(powerUp.duration, () => {
+                powerUp.removeEffect(this.player);
+                this.removeActivePowerUpIndicator(powerUp.type);
+                this.activePowerUps = this.activePowerUps.filter(p => p !== powerUp);
+            });
+        }
     }
     
     // Add UI indicator for active power-up
@@ -314,6 +350,41 @@ export default class PowerUpManager {
             
         } catch (error) {
             console.error("Error shutting down power-up manager:", error);
+        }
+    }
+
+    // Add this new method to refresh the timer bar on existing power-up indicators
+    refreshActivePowerUpIndicator(powerUp, duration) {
+        const indicator = this.powerUpIndicators[powerUp.type];
+        
+        if (indicator) {
+            // Find the timer bar (should be the 3rd child in the container)
+            const timerBar = indicator.container.list[2];
+            
+            // Stop any existing tween on the timer bar
+            this.scene.tweens.killTweensOf(timerBar);
+            
+            // Reset the timer bar width
+            timerBar.width = 30;
+            
+            // Restart the timer animation
+            this.scene.tweens.add({
+                targets: timerBar,
+                width: 0,
+                duration: duration,
+                ease: 'Linear'
+            });
+            
+            // Add a quick highlight effect to show the refresh
+            this.scene.tweens.add({
+                targets: indicator.container,
+                scaleX: 1.2,
+                scaleY: 1.2,
+                duration: 200,
+                yoyo: true,
+                repeat: 1,
+                ease: 'Bounce.Out'
+            });
         }
     }
 }

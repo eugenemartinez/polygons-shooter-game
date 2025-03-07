@@ -145,6 +145,9 @@ export default class BaseBoss {
     defeat() {
         if (!this.sprite || !this.sprite.active) return;
         
+        // Clean up any special effects first (call specialized cleanup if available)
+        this.cleanupEffects();
+        
         // Visual explosion effect
         for (let i = 0; i < 20; i++) {
             const particle = this.scene.add.graphics();
@@ -176,7 +179,67 @@ export default class BaseBoss {
             });
         }
         
+        // Create a final flash effect
+        const flash = this.scene.add.graphics();
+        flash.fillStyle(0xffffff, 0.8);
+        flash.fillCircle(0, 0, this.size * 1.5);
+        flash.x = this.sprite.x;
+        flash.y = this.sprite.y;
+        
+        this.scene.tweens.add({
+            targets: flash,
+            scale: { from: 0.5, to: 2 },
+            alpha: { from: 0.8, to: 0 },
+            duration: 500,
+            ease: 'Cubic.easeOut',
+            onComplete: () => {
+                flash.destroy();
+            }
+        });
+        
+        // Camera shake for impact
+        if (this.scene.cameras && this.scene.cameras.main) {
+            this.scene.cameras.main.shake(200, 0.01);
+        }
+        
         // Remove the boss
         this.sprite.destroy();
+    }
+    
+    // Add a new method for cleaning up effects that can be overridden by each boss type
+    cleanupEffects() {
+        // Base implementation - to be overridden by subclasses
+        // Clean up any active effects
+        if (this.activeEffects && Array.isArray(this.activeEffects)) {
+            this.activeEffects.forEach(effect => {
+                if (effect && !effect.destroyed) {
+                    // Kill any tweens on this effect
+                    if (this.scene && this.scene.tweens) {
+                        this.scene.tweens.killTweensOf(effect);
+                    }
+                    effect.destroy();
+                }
+            });
+            this.activeEffects = [];
+        }
+        
+        // Clean up any projectiles
+        if (this.projectiles && Array.isArray(this.projectiles)) {
+            this.projectiles.forEach(projectile => {
+                if (projectile && projectile.graphic && !projectile.graphic.destroyed) {
+                    if (this.scene && this.scene.tweens) {
+                        this.scene.tweens.killTweensOf(projectile.graphic);
+                    }
+                    projectile.graphic.destroy();
+                }
+            });
+            this.projectiles = [];
+        }
+        
+        // Stop any active timers/events related to this boss
+        if (this.scene && this.scene.time) {
+            // We can't easily identify which timers belong to this boss,
+            // so individual boss classes should clear their specific timers
+        }
     }
 }
