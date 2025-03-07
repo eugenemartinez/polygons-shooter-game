@@ -135,14 +135,14 @@ export default class BaseBoss {
         
         // Check if the boss is defeated
         if (this.health <= 0) {
-            this.die();
+            this.defeat();
             return true; // Indicate that the boss was defeated
         }
         
         return false; // Boss is still alive
     }
     
-    die() {
+    defeat() {
         if (!this.sprite || !this.sprite.active) return;
         
         // Visual explosion effect

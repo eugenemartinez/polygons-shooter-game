@@ -98,6 +98,61 @@ export default class GameScene extends Phaser.Scene {
                 }
             });
         }
+
+        // Setup keyboard controls
+        this.cursors = this.input.keyboard.createCursorKeys();
+        
+        // WASD keys for alternative movement
+        this.wasd = {
+            up: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
+            down: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
+            left: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
+            right: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
+        };
+        
+        // Debug keys
+        this.debugKeys = {
+            i: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.I),
+            q: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q) // Add Q key for setting HP to 0
+        };
+
+        // Add this after all your other initialization code
+    
+        // Create debug text display
+        this.debugText = this.add.text(10, 10, 'Debug Info', {
+            fontFamily: 'Courier',
+            fontSize: '14px',
+            backgroundColor: '#000000',
+            padding: { x: 10, y: 5 },
+            fill: '#00ff00'
+        });
+        this.debugText.setScrollFactor(0); // Keep it fixed on screen when camera moves
+        this.debugText.setDepth(1000);     // Make sure it's on top of everything
+        
+        // Add a toggle key for debug display
+        this.debugKeys.d = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+        
+        // Initially hide debug text (optional)
+        this.debugText.visible = false;
+
+        // Create debug text display in the top right corner
+        const margin = 10;
+        this.debugText = this.add.text(this.cameras.main.width - margin, margin, 'Debug Info', {
+            fontFamily: 'Courier',
+            fontSize: '14px',
+            backgroundColor: '#000000',
+            padding: { x: 10, y: 5 },
+            fill: '#00ff00'
+        });
+        this.debugText.setOrigin(1, 0); // Align to top right
+        this.debugText.setScrollFactor(0); // Keep it fixed on screen when camera moves
+        this.debugText.setDepth(1000);     // Make sure it's on top of everything
+        
+        // Add a toggle key for debug display
+        this.debugKeys.d = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+        
+        // Initially hide debug text (optional)
+        this.debugText.visible = false;
     }
     
     startGame() {
@@ -131,6 +186,17 @@ export default class GameScene extends Phaser.Scene {
     }
     
     update(time, delta) {
+
+        // Add this to your GameScene's update method
+        if (this.debugText) {
+            this.debugText.setText(
+                `Enemies: ${this.enemyManager.enemies.length}\n` +
+                `Bosses: ${this.bossManager.bosses.length}\n` +
+                `Power-ups: ${this.powerUpManager.powerUps.length}\n` +
+                `Memory: ${Math.round(window.performance.memory.usedJSHeapSize / (1024 * 1024))}MB`
+            );
+        }
+        
         // Make sure PowerUpManager.update() is called here
         if (this.powerUpManager) {
             this.powerUpManager.update();
@@ -151,6 +217,40 @@ export default class GameScene extends Phaser.Scene {
             }
         }
         
+        if (Phaser.Input.Keyboard.JustDown(this.debugKeys.q)) {
+            if (this.player) {
+                this.player.health = 0;
+                this.player.defeat();
+            }
+        }
+
+        // Add this with your other debug key checks
+        if (Phaser.Input.Keyboard.JustDown(this.debugKeys.d)) {
+            this.debugText.visible = !this.debugText.visible;
+        }
+        
+        // Your existing debug text update
+        if (this.debugText && this.debugText.visible) {
+            try {
+                let memoryInfo = '';
+                if (window.performance && window.performance.memory) {
+                    memoryInfo = `Memory: ${Math.round(window.performance.memory.usedJSHeapSize / (1024 * 1024))}MB`;
+                }
+                
+                this.debugText.setText(
+                    `FPS: ${Math.round(this.game.loop.actualFps)}\n` +
+                    `Enemies: ${this.enemyManager.enemies.length}\n` +
+                    `Bosses: ${this.bossManager.bosses.length}\n` +
+                    `Power-ups: ${this.powerUpManager.powerUps ? this.powerUpManager.powerUps.length : 0}\n` +
+                    memoryInfo
+                );
+            } catch (e) {
+                console.error("Error updating debug text:", e);
+            }
+        }
+        
+        // Rest of your update code...
+
         // Update player if it exists
         if (this.player) {
             // If joystick exists (touch device), use its input
@@ -338,37 +438,37 @@ export default class GameScene extends Phaser.Scene {
 
     // Add a shutdown method to properly clean up
     shutdown() {
-        console.log("Shutting down game scene...");
-
-        // Clean up any persistent objects or timers
-        if (this.enemyManager) {
-            this.enemyManager.shutdown();
-        }
         
-        if (this.bossManager) {
-            this.bossManager.shutdown();
-        }
-        
-        if (this.powerUpManager) {
-            this.powerUpManager.shutdown();
-        }
-        
-        // Clean up any active timers
-        this.time.removeAllEvents();
-        
-        // Clean up any tweens
-        this.tweens.killAll();
-        
-        // Clean up any game objects that might persist
-        if (this.player) {
-            this.player.destroy();
-        }
-        
-        // Clean up joystick
-        if (this.joystick) {
-            // Remove event listeners if needed
-            this.input.off('drag');
-            this.input.off('pointerup');
+        try {
+            if (this.gameStats) {
+                this.gameStats.shutdown();
+            }
+            
+            if (this.enemyManager) {
+                this.enemyManager.shutdown();
+            }
+            
+            if (this.bossManager) {
+                this.bossManager.shutdown();
+            }
+            
+            if (this.powerUpManager) {
+                this.powerUpManager.shutdown();
+            }
+            
+            if (this.player) {
+                this.player.destroy();
+            }
+            
+            this.time.removeAllEvents();
+            this.tweens.killAll();
+            
+            if (this.joystick) {
+                this.joystick.shutdown();
+                this.joystick = null;
+            }
+        } catch (error) {
+            console.error("Error shutting down game scene:", error);
         }
     }
 

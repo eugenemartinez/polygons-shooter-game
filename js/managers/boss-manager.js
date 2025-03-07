@@ -225,45 +225,28 @@ export default class BossManager {
     }
 
     shutdown() {
-        console.log("Shutting down boss manager...");
         
         try {
-            // First, remove all colliders to prevent errors on restart
-            this.removeAllColliders();
-            
-            // Clear all bosses
-            this.bosses = [];
-            if (this.bossGroup) {
-                this.bossGroup.clear(true, true);
-            }
-            
-            // Clear all boss bullets with extra care
-            if (this.bossBullets) {
-                // Destroy each bullet individually first
-                const bullets = this.bossBullets.getChildren();
-                if (bullets && bullets.length > 0) {
-                    for (const bullet of bullets) {
-                        if (bullet && bullet.active) {
-                            bullet.destroy();
-                        }
+            // Defeat all active bosses
+            if (this.bosses && this.bosses.length > 0) {
+                for (const boss of [...this.bosses]) {
+                    if (boss && boss.sprite && boss.sprite.active) {
+                        boss.defeat();
                     }
                 }
-                // Then clear the group
-                this.bossBullets.clear(true, true);
-                // Null the reference to force recreation later
-                this.bossBullets = null;
+                this.bosses = [];
             }
             
-            // Remove event listeners
-            if (this.scene && this.scene.events) {
-                this.scene.events.off('bossFireBullet', this.handleBossFireBullet, this);
-            }
+            // Set bossGroup to null (will be recreated in constructor)
+            this.bossGroup = null;
             
-            // Reset boss tracking
+            // Reset tracking variables
             this.bossesDefeated = 0;
             this.currentBossLevel = 0;
             this.lastSpawnedInterval = 0;
             this.unlockedBossLevels = [1];
+            
+            // Don't touch shapeToBossMap - it will be recreated in the constructor
             
         } catch (error) {
             console.error("Error shutting down boss manager:", error);
@@ -279,14 +262,20 @@ export default class BossManager {
             // Get all active colliders
             const colliders = this.scene.physics.world.colliders.getActive();
             
+            if (!colliders) {
+                return;
+            }
+            
             // Remove any colliders involving our groups
             for (const collider of colliders) {
+                if (!collider) continue;
+                
                 const obj1 = collider.object1;
                 const obj2 = collider.object2;
                 
-                // Check if either object is one of our groups
-                if (obj1 === this.bossBullets || obj2 === this.bossBullets || 
-                    obj1 === this.bossGroup || obj2 === this.bossGroup) {
+                // Check if either object is one of our groups, with extra null checks
+                if ((this.bossBullets && (obj1 === this.bossBullets || obj2 === this.bossBullets)) || 
+                    (this.bossGroup && (obj1 === this.bossGroup || obj2 === this.bossGroup))) {
                     collider.destroy();
                 }
             }

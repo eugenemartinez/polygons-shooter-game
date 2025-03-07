@@ -279,22 +279,41 @@ export default class PowerUpManager {
     
     // Cleanup on shutdown
     shutdown() {
-        console.log("Shutting down power-up manager...");
         
-        // Clear all active power-ups
-        this.clear();
-        
-        // Clear the physics group for power-ups
-        if (this.powerUpGroup) {
-            this.powerUpGroup.clear(true, true);
+        try {
+            // Remove effects of active power-ups
+            if (this.activePowerUps) {
+                for (const powerUp of this.activePowerUps) {
+                    if (powerUp) {
+                        // Remove the timer if it exists
+                        if (powerUp.activeTimer) {
+                            powerUp.activeTimer.remove();
+                        }
+                        
+                        // Remove the effect from the player
+                        if (typeof powerUp.removeEffect === 'function') {
+                            powerUp.removeEffect(this.player);
+                        }
+                    }
+                }
+                this.activePowerUps = [];
+            }
+            
+            // Destroy all power-up sprites
+            if (this.powerUps) {
+                for (const powerUp of this.powerUps) {
+                    if (powerUp) {
+                        powerUp.destroy();
+                    }
+                }
+                this.powerUps = [];
+            }
+            
+            // Reset other properties
+            this.lastSpawnTimeSeconds = -1;
+            
+        } catch (error) {
+            console.error("Error shutting down power-up manager:", error);
         }
-        
-        // Destroy the indicator container
-        if (this.indicatorContainer) {
-            this.indicatorContainer.destroy();
-        }
-        
-        // Reset spawn tracking
-        this.lastSpawnTimeSeconds = -1;
     }
 }
