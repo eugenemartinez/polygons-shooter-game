@@ -38,36 +38,37 @@ export default class VirtualJoystick {
     }
     
     setupTouchInteraction() {
-        // Add listener for touch start
-        this.scene.input.on('pointerdown', (pointer) => {
-            // Check if this is the bottom half of screen (for movement)
-            // Changed from left half to bottom half
+        // Store event handlers for later removal
+        this.pointerDownHandler = (pointer) => {
             if (pointer.y > this.scene.cameras.main.height / 2) {
                 this.touchId = pointer.id;
                 this.activateJoystick(pointer.x, pointer.y);
             }
-        });
+        };
         
-        // Add listener for touch move
-        this.scene.input.on('pointermove', (pointer) => {
+        this.pointerMoveHandler = (pointer) => {
             if (this.isActive && pointer.id === this.touchId) {
                 this.moveStick(pointer.x, pointer.y);
             }
-        });
+        };
         
-        // Add listener for touch end
-        this.scene.input.on('pointerup', (pointer) => {
+        this.pointerUpHandler = (pointer) => {
             if (this.isActive && pointer.id === this.touchId) {
                 this.deactivateJoystick();
             }
-        });
-
-        // Also listen for pointer out of game (in case finger leaves screen)
-        this.scene.input.on('pointerout', (pointer) => {
+        };
+        
+        this.pointerOutHandler = (pointer) => {
             if (this.isActive && pointer.id === this.touchId) {
                 this.deactivateJoystick();
             }
-        });
+        };
+        
+        // Add event listeners
+        this.scene.input.on('pointerdown', this.pointerDownHandler, this);
+        this.scene.input.on('pointermove', this.pointerMoveHandler, this);
+        this.scene.input.on('pointerup', this.pointerUpHandler, this);
+        this.scene.input.on('pointerout', this.pointerOutHandler, this);
     }
     
     activateJoystick(x, y) {
@@ -137,5 +138,24 @@ export default class VirtualJoystick {
             x: this.deltaX,
             y: this.deltaY
         };
+    }
+
+    shutdown() {
+        // Remove event listeners
+        this.scene.input.off('pointerdown', this.pointerDownHandler, this);
+        this.scene.input.off('pointermove', this.pointerMoveHandler, this);
+        this.scene.input.off('pointerup', this.pointerUpHandler, this);
+        this.scene.input.off('pointerout', this.pointerOutHandler, this);
+        
+        // Destroy joystick graphics
+        this.base.destroy();
+        this.stick.destroy();
+        this.border.destroy();
+        
+        // Null out references
+        this.base = null;
+        this.stick = null;
+        this.border = null;
+        this.scene = null;
     }
 }

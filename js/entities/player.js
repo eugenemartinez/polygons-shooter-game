@@ -104,6 +104,9 @@ export default class Player {
     update(time, delta) {
         if (!this.sprite.active) return;
         
+        // Always rotate the player at a constant rate
+        this.sprite.rotation += 0.03;
+        
         this.handleMovement();
         
         // Apply world bounds to keep the player inside the game area
@@ -281,7 +284,7 @@ export default class Player {
         this.health -= amount;
         
         if (this.health <= 0) {
-            this.die();
+            this.defeat();
         }
         
         if (this.scene.gameStats) {
@@ -296,10 +299,16 @@ export default class Player {
         });
     }
     
-    die() {
+    defeat() {
+        if (!this.sprite) return;
+        
         this.sprite.visible = false;
         this.sprite.active = false;
-        this.sprite.body.enable = false;
+        
+        // Safety check for sprite.body
+        if (this.sprite.body) {
+            this.sprite.body.enable = false;
+        }
         
         const particles = this.scene.add.particles(this.x, this.y, 'particle', {
             speed: { min: 50, max: 200 },
@@ -408,6 +417,7 @@ export default class Player {
             }
         }
         
+        // Set velocity
         if (dx !== 0 && dy !== 0) {
             const length = Math.sqrt(dx * dx + dy * dy);
             dx /= length;
@@ -415,6 +425,8 @@ export default class Player {
         }
         
         this.sprite.body.setVelocity(dx * this.speed, dy * this.speed);
+        
+        // No rotation based on movement direction - we handle rotation in update()
     }
 
     // Methods to apply and remove power-up effects
@@ -448,5 +460,30 @@ export default class Player {
 
     removeShield() {
         this.isInvincible = false;
+    }
+
+    destroy() {
+        try {
+            // Stop any active tweens
+            if (this.invinciblePulse) {
+                this.invinciblePulse.stop();
+                this.invinciblePulse = null;
+            }
+            
+            // Safely handle bullets one by one instead of using clear()
+            if (this.bullets) {
+                // Direct approach: null out the bullets reference
+                // The scene reset will handle cleaning up the actual objects
+                this.bullets = null;
+            }
+            
+            // Destroy the sprite
+            if (this.sprite) {
+                this.sprite.destroy();
+                this.sprite = null;
+            }
+        } catch (error) {
+            console.error("Error destroying player:", error);
+        }
     }
 }

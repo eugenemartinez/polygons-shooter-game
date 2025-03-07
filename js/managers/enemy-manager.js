@@ -233,7 +233,7 @@ export default class EnemyManager {
         if (enemy && player) {
             player.takeDamage(enemy.damage);
             
-            enemy.die();
+            enemy.defeat();
             
             const index = this.enemies.indexOf(enemy);
             if (index > -1) {
@@ -257,29 +257,43 @@ export default class EnemyManager {
 
     // Method for proper cleanup
     shutdown() {
-        console.log("Shutting down enemy manager...");
         
-        // Clear all enemies from the game
-        if (this.enemyGroup) {
-            this.enemyGroup.clear(true, true);
-        }
-        this.enemies = [];
-        
-        // Reset tracking variables
-        this.enemySpawnCount = 0;
-        
-        // Reset progression
-        this.unlockedShapes = [this.availableShapes[0]];
-        this.lastShapeProgressionInterval = 0;
-        
-        // Remove any active timers or events related to enemy spawning
-        if (this.spawnTimer) {
-            this.spawnTimer.remove();
-        }
-        
-        // Remove any event listeners if applicable
-        if (this.scene && this.scene.events) {
-            this.scene.events.off('enemySpawn', this.spawnEnemy, this);
+        try {
+            // First, safely destroy any remaining active enemies
+            if (this.enemies && this.enemies.length > 0) {
+                // Create a copy to avoid modification during iteration
+                const remainingEnemies = [...this.enemies];
+                
+                // Clear the original array first to prevent double references
+                this.enemies = [];
+                
+                // Now safely process each enemy
+                for (const enemy of remainingEnemies) {
+                    if (enemy && enemy.sprite && enemy.sprite.active) {
+                        enemy.defeat();
+                    }
+                }
+            }
+            
+            // Reset all tracking variables
+            this.enemySpawnCount = 0;
+            this.lastShapeProgressionInterval = 0;
+            this.lastSpawnGameTime = 0;
+            
+            if (this.availableShapes && this.availableShapes.length > 0) {
+                this.unlockedShapes = [this.availableShapes[0]];
+            }
+            
+            // Clean up any timers
+            if (this.spawnTimer) {
+                this.spawnTimer.remove();
+                this.spawnTimer = null;
+            }
+            
+            // The empty enemyGroup will be recreated on next game start
+            this.enemyGroup = null;
+        } catch (error) {
+            console.error("Error during enemy manager shutdown:", error);
         }
     }
 }

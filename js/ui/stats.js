@@ -167,4 +167,10 @@ export default class GameStats {
             elapsedTime: this.elapsedTime
         };
     }
+
+    shutdown() {
+        this.stopTimer();
+        this.score = 0;
+        this.elapsedTime = 0;
+    }
 }

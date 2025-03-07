@@ -79,7 +79,7 @@ export default class TitleScene extends Phaser.Scene {
         } else {
             // For tablets and mobile, show auto-aim message and joystick instructions
             const touchText = this.add.text(width / 2, instructionsY,
-                'Auto-aim enabled for touch devices\nUse the virtual joystick to move', {
+                'Auto-aim enabled for touch devices\nTouch anywhere in the lower half of the screen to use the joystick', {
                 fontFamily: 'Arial',
                 fontSize: `${smallerDimension * 0.03}px`,
                 color: '#cccccc',

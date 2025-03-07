@@ -123,14 +123,14 @@ export default class BaseEnemy {
         });
         
         if (this.health <= 0) {
-            this.die();
-            return true; // Enemy died
+            this.defeat();
+            return true; // Enemy defeated
         }
         
         return false; // Enemy still alive
     }
     
-    die() {
+    defeat() {
         if (!this.sprite || !this.sprite.active) return;
         
         // Visual explosion effect
