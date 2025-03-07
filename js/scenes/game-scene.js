@@ -258,11 +258,40 @@ export default class GameScene extends Phaser.Scene {
 
         // Update player if it exists
         if (this.player) {
-            // If joystick exists (touch device), use its input
-            if (this.joystick) {
+            // First check for keyboard input (WASD or arrow keys)
+            let keyboardMoveX = 0;
+            let keyboardMoveY = 0;
+            
+            // Check WASD and arrow keys
+            if (this.wasd.left.isDown || this.cursors.left.isDown) {
+                keyboardMoveX = -1;
+            } else if (this.wasd.right.isDown || this.cursors.right.isDown) {
+                keyboardMoveX = 1;
+            }
+            
+            if (this.wasd.up.isDown || this.cursors.up.isDown) {
+                keyboardMoveY = -1;
+            } else if (this.wasd.down.isDown || this.cursors.down.isDown) {
+                keyboardMoveY = 1;
+            }
+            
+            // If keyboard input is detected, use that
+            if (keyboardMoveX !== 0 || keyboardMoveY !== 0) {
+                // Normalize diagonal movement
+                if (keyboardMoveX !== 0 && keyboardMoveY !== 0) {
+                    const length = Math.sqrt(keyboardMoveX * keyboardMoveX + keyboardMoveY * keyboardMoveY);
+                    keyboardMoveX /= length;
+                    keyboardMoveY /= length;
+                }
+                
+                // Use keyboard input
+                this.player.handleJoystickMovement({ x: keyboardMoveX, y: keyboardMoveY });
+            }
+            // Otherwise, fall back to joystick if it exists
+            else if (this.joystick) {
                 const movement = this.joystick.getMovement();
                 this.player.handleJoystickMovement(movement);
-            } 
+            }
             
             this.player.update(time, delta);
         }
@@ -446,10 +475,11 @@ export default class GameScene extends Phaser.Scene {
         });
     }
 
-    // Add a shutdown method to properly clean up
+    // Update the existing shutdown method to be more thorough
+
     shutdown() {
-        
         try {
+            // First shut down all managers which will handle their own cleanup
             if (this.gameStats) {
                 this.gameStats.shutdown();
             }
@@ -470,6 +500,7 @@ export default class GameScene extends Phaser.Scene {
                 this.player.destroy();
             }
             
+            // Kill all tweens and timers
             this.time.removeAllEvents();
             this.tweens.killAll();
             
@@ -477,8 +508,104 @@ export default class GameScene extends Phaser.Scene {
                 this.joystick.shutdown();
                 this.joystick = null;
             }
+            
+            // NEW: Extra safety - scan for any lingering graphics that might be boss effects
+            this.cleanupLingeringEffects();
+            
+            // Reset camera effects
+            if (this.cameras && this.cameras.main) {
+                this.cameras.main.stopShake();
+                this.cameras.main.resetFX();
+            }
+            
         } catch (error) {
             console.error("Error shutting down game scene:", error);
+        }
+    }
+
+    // Add this new method to handle any lingering effects
+    cleanupLingeringEffects() {
+        try {
+            // Find and clean up any graphics objects that might be lingering boss effects
+            const graphicsObjects = this.children.getAll().filter(child => 
+                child && !child.destroyed && (
+                    child.type === 'Graphics' || 
+                    (child.type === 'Container' && child.name && child.name.includes('boss'))
+                )
+            );
+            
+            // Create a delayed sequence to fade out and destroy these objects
+            let delay = 0;
+            const delayIncrement = 20; // stagger removal slightly for smoother transition
+            
+            graphicsObjects.forEach(obj => {
+                // Skip certain UI elements that should persist
+                if (obj.name && (
+                    obj.name.includes('ui') || 
+                    obj.name.includes('hud') || 
+                    obj.name.includes('stats') ||
+                    obj.name.includes('debug')
+                )) return;
+                
+                this.time.delayedCall(delay, () => {
+                    if (obj && !obj.destroyed) {
+                        // Kill any tweens
+                        this.tweens.killTweensOf(obj);
+                        
+                        // Fade out and destroy
+                        this.tweens.add({
+                            targets: obj,
+                            alpha: 0,
+                            scale: 0.5,
+                            duration: 150,
+                            onComplete: () => {
+                                if (obj && !obj.destroyed) {
+                                    obj.destroy();
+                                }
+                            }
+                        });
+                    }
+                });
+                
+                delay += delayIncrement;
+            });
+            
+            // Look for any objects with the word 'effect' or 'particle' in their names
+            const effectObjects = this.children.getAll().filter(child => 
+                child && !child.destroyed && child.name && (
+                    child.name.includes('effect') || 
+                    child.name.includes('particle') ||
+                    child.name.includes('trail') ||
+                    child.name.includes('glow')
+                )
+            );
+            
+            // Clean these up too
+            effectObjects.forEach(obj => {
+                if (obj && !obj.destroyed) {
+                    this.tweens.killTweensOf(obj);
+                    obj.destroy();
+                }
+            });
+            
+            // Do one final garbage collection pass after a slight delay
+            this.time.delayedCall(300, () => {
+                // Force a texture refresh to ensure GPU memory is freed
+                if (this.textures && typeof this.textures.refresh === 'function') {
+                    this.textures.refresh();
+                }
+                
+                // Force a renderer reset if available
+                if (this.renderer && typeof this.renderer.reset === 'function') {
+                    this.renderer.reset();
+                }
+                
+                // Refresh scale manager
+                this.scale.refresh();
+            });
+            
+        } catch (error) {
+            console.error("Error during lingering effects cleanup:", error);
         }
     }
 

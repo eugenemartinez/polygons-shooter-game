@@ -225,28 +225,53 @@ export default class BossManager {
     }
 
     shutdown() {
-        
         try {
-            // Defeat all active bosses
+            // First remove colliders to prevent callback issues
+            this.removeAllColliders();
+            
+            // Clean up all active bosses - WITHOUT calling defeat()
             if (this.bosses && this.bosses.length > 0) {
                 for (const boss of [...this.bosses]) {
-                    if (boss && boss.sprite && boss.sprite.active) {
-                        boss.defeat();
+                    if (boss) {
+                        // First call cleanupEffects which won't create new effects
+                        if (boss.cleanupEffects) {
+                            try {
+                                boss.cleanupEffects();
+                            } catch (error) {
+                                console.error("Error cleaning up boss effects:", error);
+                            }
+                        }
+                        
+                        // Then destroy the sprite directly
+                        if (boss.sprite && !boss.sprite.destroyed) {
+                            boss.sprite.destroy();
+                        }
                     }
                 }
                 this.bosses = [];
             }
             
-            // Set bossGroup to null (will be recreated in constructor)
-            this.bossGroup = null;
+            // Clean up physics groups directly
+            if (this.bossBullets) {
+                if (Array.isArray(this.bossBullets.getChildren())) {
+                    this.bossBullets.getChildren().forEach(bullet => {
+                        if (bullet && !bullet.destroyed) {
+                            bullet.destroy();
+                        }
+                    });
+                }
+                this.bossBullets = null;
+            }
+            
+            if (this.bossGroup) {
+                this.bossGroup = null;
+            }
             
             // Reset tracking variables
             this.bossesDefeated = 0;
             this.currentBossLevel = 0;
             this.lastSpawnedInterval = 0;
             this.unlockedBossLevels = [1];
-            
-            // Don't touch shapeToBossMap - it will be recreated in the constructor
             
         } catch (error) {
             console.error("Error shutting down boss manager:", error);
